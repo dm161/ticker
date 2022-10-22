@@ -8,14 +8,14 @@ import (
 	"diego.pizza/ksoc/ticker/internal/signal"
 )
 
-func SignalResourceHandler(signals signal.Repo) func(w http.ResponseWriter, r *http.Request) {
+func SignalResourceHandler(signalRepo signal.Repo) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
-			listSignalHandler(signals)(w, r)
+			listSignalHandler(signalRepo)(w, r)
 			return
 		case http.MethodPost:
-			updateSignalHandler(signals)(w, r)
+			updateSignalHandler(signalRepo)(w, r)
 			return
 		default:
 			fmt.Fprint(w, "method not supported")
@@ -24,12 +24,12 @@ func SignalResourceHandler(signals signal.Repo) func(w http.ResponseWriter, r *h
 	}
 }
 
-func listSignalHandler(signals signal.Repo) func(w http.ResponseWriter, r *http.Request) {
+func listSignalHandler(signalRepo signal.Repo) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		signals.RLock()
-		defer signals.RUnlock()
-		jsonBytes, err := json.Marshal(signals.Signals)
+		signalRepo.RLock()
+		defer signalRepo.RUnlock()
+		jsonBytes, err := json.Marshal(signalRepo.List())
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintf(w, `{"error": "%v"}`, err.Error())
@@ -40,7 +40,7 @@ func listSignalHandler(signals signal.Repo) func(w http.ResponseWriter, r *http.
 	}
 }
 
-func updateSignalHandler(signals signal.Repo) func(w http.ResponseWriter, r *http.Request) {
+func updateSignalHandler(signalRepo signal.Repo) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		var updateRq signal.SignalUpdateRequest
@@ -49,16 +49,7 @@ func updateSignalHandler(signals signal.Repo) func(w http.ResponseWriter, r *htt
 			fmt.Fprintf(w, `{"error": "%v"}`, err.Error())
 			return
 		}
-		signals.Lock()
-		defer signals.Unlock()
-		var updated bool
-		for k, v := range signals.Signals {
-			if v.ID == updateRq.ID {
-				signals.Signals[k].Msg = updateRq.Msg
-				updated = true
-			}
-		}
-		if !updated {
+		if !signalRepo.Update(updateRq) {
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(w, `{"status": "not found"}`)
 			return

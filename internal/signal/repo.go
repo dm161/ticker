@@ -24,3 +24,17 @@ func NewRepo(signals []Signal) Repo {
 func (r Repo) List() []Signal {
 	return r.Signals
 }
+
+func (r Repo) Update(updateRq SignalUpdateRequest) bool {
+	r.Lock()
+	defer r.Unlock()
+	var updated bool
+	for k, v := range r.Signals {
+		if v.ID == updateRq.ID {
+			r.Signals[k].Msg = updateRq.Msg
+			updated = true
+		}
+	}
+
+	return updated
+}

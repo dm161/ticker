@@ -2,46 +2,83 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
 )
+
+type Config struct {
+	Host           string        `json:"host"`
+	Port           int           `json:"port"`
+	TickerInterval time.Duration `json:"ticker_interval"`
+	Timeout        time.Duration `json:"timeout"`
+	Signals        []Signal      `json:"signals"`
+}
+
+func ParseConfig(f io.Reader) (Config, error) {
+	var cfg Config
+	if err := json.NewDecoder(f).Decode(&cfg); err != nil {
+		return cfg, err
+	}
+	return cfg, nil
+}
 
 type SignalCollection struct {
 	sync.RWMutex
 	Signals []Signal
 }
 
+func NewSignalCollection(cfg Config) SignalCollection {
+	signals := cfg.Signals
+	sort.Slice(signals, func(i, j int) bool {
+		return signals[i].Freq > signals[j].Freq
+	})
+
+	return SignalCollection{
+		RWMutex: sync.RWMutex{},
+		Signals: signals,
+	}
+}
+
 type Signal struct {
-	ID   uint64
-	Freq uint64
-	Msg  string
+	ID   uint64 `json:"id"`
+	Freq uint64 `json:"frequency"`
+	Msg  string `json:"message"`
 }
 
 type SignalUpdateRequest struct {
-	SignalID uint64
-	Msg      string
+	SignalID uint64 `json:"signal_id"`
+	Msg      string `json:"message"`
 }
 
 func main() {
-	signals := loadSignals()
-	startClock(signals, time.Second, 60*time.Second)
-	http.HandleFunc("/signal", signalHandler(signals))
-	http.ListenAndServe("localhost:9876", nil)
-}
-
-func loadSignals() SignalCollection {
-	return SignalCollection{
-		RWMutex: sync.RWMutex{},
-		Signals: []Signal{
-			{ID: 1, Freq: 10, Msg: "bong"},
-			{ID: 2, Freq: 3, Msg: "tock"},
-			{ID: 3, Freq: 1, Msg: "tick"},
-		},
+	var configPath string
+	flag.StringVar(&configPath, "configpath", "", "JSON file configuration path")
+	flag.Parse()
+	if configPath == "" {
+		flag.Usage()
+		os.Exit(1)
 	}
+	file, err := os.Open(configPath)
+	if err != nil {
+		fmt.Printf("unable to open config file in path %v", err)
+		os.Exit(1)
+	}
+	cfg, err := ParseConfig(file)
+	if err != nil {
+		fmt.Printf("unable to parse config file %v", err)
+		os.Exit(1)
+	}
+	signals := NewSignalCollection(cfg)
+	startClock(signals, cfg.TickerInterval*time.Second, cfg.Timeout*time.Second)
+	http.HandleFunc("/signal", signalHandler(signals))
+	http.ListenAndServe(fmt.Sprintf("%s:%d", cfg.Host, cfg.Port), nil)
 }
 
 func signalHandler(signals SignalCollection) func(w http.ResponseWriter, r *http.Request) {

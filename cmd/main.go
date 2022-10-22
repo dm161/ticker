@@ -30,7 +30,7 @@ func main() {
 	signals := loadSignals()
 	startClock(signals, time.Second, 60*time.Second)
 	http.HandleFunc("/signal", signalHandler(signals))
-	http.ListenAndServe(":9876", nil)
+	http.ListenAndServe("localhost:9876", nil)
 }
 
 func loadSignals() SignalCollection {
@@ -91,7 +91,7 @@ func updateSignalHandler(signals SignalCollection) func(w http.ResponseWriter, r
 		for k, v := range signals.Signals {
 			if v.ID == updateRq.SignalID {
 				signals.Signals[k].Msg = updateRq.Msg
-				updated := true
+				updated = true
 			}
 		}
 		if !updated {

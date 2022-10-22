@@ -18,7 +18,7 @@ A mechanism should exist for the user to alter any of the printed values while t
 ### Build
 
 ```
-$ go build -o ticker_server cmd/main.go
+$ go build -o ticker_server cmd/server.go
 ```
 
 ### Test 

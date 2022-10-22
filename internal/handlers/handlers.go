@@ -6,10 +6,9 @@ import (
 	"net/http"
 
 	"diego.pizza/ksoc/ticker/internal/signal"
-	"diego.pizza/ksoc/ticker/internal/signalcollection"
 )
 
-func SignalResourceHandler(signals signalcollection.SignalCollection) func(w http.ResponseWriter, r *http.Request) {
+func SignalResourceHandler(signals signal.Repo) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
@@ -25,7 +24,7 @@ func SignalResourceHandler(signals signalcollection.SignalCollection) func(w htt
 	}
 }
 
-func listSignalHandler(signals signalcollection.SignalCollection) func(w http.ResponseWriter, r *http.Request) {
+func listSignalHandler(signals signal.Repo) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		signals.RLock()
@@ -41,7 +40,7 @@ func listSignalHandler(signals signalcollection.SignalCollection) func(w http.Re
 	}
 }
 
-func updateSignalHandler(signals signalcollection.SignalCollection) func(w http.ResponseWriter, r *http.Request) {
+func updateSignalHandler(signals signal.Repo) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		var updateRq signal.SignalUpdateRequest

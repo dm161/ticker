@@ -44,14 +44,14 @@ bong
 ..
 ```
 
-### List all current tickers
+### List all current signals 
 
 ```
 $ curl -H 'content-type: application/json' http://localhost:9876/signal
 [{"id":3,"frequency":10,"message":"bong"},{"id":2,"frequency":3,"message":"tock"},{"id":1,"frequency":1,"message":"tick"}]
 ```
 
-### Update ticker message
+### Update signal message
 
 
 ```

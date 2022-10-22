@@ -55,6 +55,6 @@ $ curl -H 'content-type: application/json' http://localhost:9876/signal
 
 
 ```
-$ curl -H 'content-type: application/json' -X POST http://localhost:9876/signal --data '{"signal_id": 1, "message": "boom"}'
+$ curl -H 'content-type: application/json' -X POST http://localhost:9876/signal --data '{"id": 1, "message": "boom"}'
 {"status": "ok"}
 ```

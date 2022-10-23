@@ -15,6 +15,8 @@ A mechanism should exist for the user to alter any of the printed values while t
 
 ## HOW TO USE
 
+You do not need any external dependencies in order to run this program. The only thing you need is a working Go installation. I have used `go1.18 darwin/arm64` but any other latest version should work.
+
 ### Build
 
 ```

@@ -42,7 +42,11 @@ func run(configPath string) error {
 		cfg.TickerInterval*time.Second,
 		ticker.TimeoutChan(cfg.Timeout*time.Second),
 	)
-	tc.Start(os.Stdout)
+	done := tc.Start(os.Stdout)
+	go func() {
+		<-done
+		os.Exit(0)
+	}()
 	http.HandleFunc("/signal", handlers.SignalResourceHandler(signals))
 	http.ListenAndServe(fmt.Sprintf("%s:%d", cfg.Host, cfg.Port), nil)
 	return nil

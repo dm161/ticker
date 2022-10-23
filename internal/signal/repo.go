@@ -22,7 +22,10 @@ func NewRepo(signals []Signal) Repo {
 }
 
 func (r Repo) List() []Signal {
-	return r.Signals
+	r.RLock()
+	defer r.RUnlock()
+	signals := r.Signals
+	return signals
 }
 
 func (r Repo) Update(updateRq SignalUpdateRequest) bool {

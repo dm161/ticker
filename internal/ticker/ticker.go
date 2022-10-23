@@ -3,20 +3,23 @@ package ticker
 import (
 	"fmt"
 	"io"
-	"os"
 	"sync/atomic"
 	"time"
 
 	"diego.pizza/ksoc/ticker/internal/signal"
 )
 
+type signalRepo interface {
+	List() []signal.Signal
+}
+
 type Ticker struct {
-	signalRepo signal.Repo
+	signalRepo signalRepo
 	interval   time.Duration // interval determines the base frequency at which the ticker will check for signals
 	timeout    <-chan struct{}
 }
 
-func New(signalRepo signal.Repo, interval time.Duration, timeout <-chan struct{}) *Ticker {
+func New(signalRepo signalRepo, interval time.Duration, timeout <-chan struct{}) *Ticker {
 	return &Ticker{
 		signalRepo: signalRepo,
 		interval:   interval,
@@ -24,18 +27,17 @@ func New(signalRepo signal.Repo, interval time.Duration, timeout <-chan struct{}
 	}
 }
 
-func (t *Ticker) Start(out io.Writer) {
+func (t *Ticker) Start(out io.Writer) <-chan struct{} {
 	ticker := time.NewTicker(t.interval)
+	done := make(chan struct{})
 	var elapsed uint64
 	go func() {
 		for {
 			select {
 			case <-t.timeout:
-				os.Exit(0)
-				return
+				ticker.Stop()
+				done <- struct{}{}
 			case <-ticker.C:
-				t.signalRepo.RLock()
-				defer t.signalRepo.RUnlock()
 				atomic.AddUint64(&elapsed, 1)
 				for _, signal := range t.signalRepo.List() {
 					if elapsed%signal.Freq == 0 {
@@ -46,6 +48,7 @@ func (t *Ticker) Start(out io.Writer) {
 			}
 		}
 	}()
+	return done
 }
 
 func TimeoutChan(timeout time.Duration) chan struct{} {

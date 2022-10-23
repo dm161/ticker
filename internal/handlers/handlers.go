@@ -24,11 +24,13 @@ func SignalResourceHandler(signalRepo signal.Repo) func(w http.ResponseWriter, r
 	}
 }
 
-func listSignalHandler(signalRepo signal.Repo) func(w http.ResponseWriter, r *http.Request) {
+type signalRepoGetter interface {
+	List() []signal.Signal
+}
+
+func listSignalHandler(signalRepo signalRepoGetter) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		signalRepo.RLock()
-		defer signalRepo.RUnlock()
 		jsonBytes, err := json.Marshal(signalRepo.List())
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -40,7 +42,11 @@ func listSignalHandler(signalRepo signal.Repo) func(w http.ResponseWriter, r *ht
 	}
 }
 
-func updateSignalHandler(signalRepo signal.Repo) func(w http.ResponseWriter, r *http.Request) {
+type signalRepoUpdater interface {
+	Update(updateRq signal.SignalUpdateRequest) bool
+}
+
+func updateSignalHandler(signalRepo signalRepoUpdater) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		var updateRq signal.SignalUpdateRequest

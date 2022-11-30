@@ -1,6 +1,5 @@
-# KSOC Backend Tech Test
+# Ticker Server Test
 
-Note: please do not post your solution to a public git repo
 Create a clock application that will print the following values at the following intervals to stdout:
 
 "tick" every second
